@@ -1,0 +1,38 @@
+name: Daily IT Jobs Scraper
+
+on:
+  schedule:
+    - cron: '0 4 * * *'   # 7:00 AM Nairobi time (EAT = UTC+3)
+  workflow_dispatch:        # Allows you to click "Run workflow" manually on GitHub
+
+permissions:
+  contents: write
+
+jobs:
+  scrape-and-publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: pip install requests beautifulsoup4 lxml
+
+      - name: Run the scraper
+        run: python scraper.py
+
+      - name: Commit and push updated jobs.json
+        run: |
+          git config --global user.name "ke-tech-jobs-bot"
+          git config --global user.email "bot@ke-tech-jobs.pages.dev"
+          git add jobs.json
+          git diff --staged --quiet || git commit -m "🤖 Daily update $(date '+%Y-%m-%d'): fresh IT jobs"
+          git push
